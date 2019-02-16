@@ -14,7 +14,9 @@ Launched-Deadline and Success/Failure
 kick.2018 <- kick.2018 %>% filter(state %in% c("failed", "successful")) %>% 
     mutate(diff_date = as.numeric(as.Date(deadline) - as.Date(str_extract(launched, 
         "^.{10}"))))
-hist(kick.2018$diff_date, main = "Launched-Deadline", xlab = "Days")
+
+ggplot(kick.2018) + geom_histogram(aes(x = diff_date), bins = 30) + xlab("Days") + 
+    ylab("") + ggtitle("Launched-Deadline")
 ```
 
 <img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-1.png" width="60%" style="display: block; margin: auto;" />
@@ -27,16 +29,15 @@ failed <- subset(kick.2018, select = diff_date, subset = state == "failed",
 successful <- subset(kick.2018, select = diff_date, subset = state == "successful", 
     drop = T)
 
-hist(failed, main = "Launched-Deadline, Failed", xlab = "Days")
+ggplot(kick.2018, aes(x = diff_date, fill = state, color = state)) + geom_histogram(alpha = 0.2, 
+    position = "identity", bins = 30) + xlab("Days") + ylab("") + scale_fill_discrete(name = "Successful/Failure", 
+    breaks = c("failed", "successful"), labels = c("Failed", "Successful")) + 
+    scale_color_discrete(name = "Successful/Failure", breaks = c("failed", "successful"), 
+        labels = c("Failed", "Successful")) + ggtitle("Launched-Deadline") + 
+    theme(legend.position = "bottom")
 ```
 
 <img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-2.png" width="60%" style="display: block; margin: auto;" />
-
-``` r
-hist(successful, main = "Launched-Deadline, Successful", xlab = "Days")
-```
-
-<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-3.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
 t.test(kick.2018$diff_date ~ kick.2018$state)
