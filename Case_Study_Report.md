@@ -40,6 +40,15 @@ ggplot(kick.2018, aes(x = diff_date, fill = state, color = state)) + geom_histog
 <img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-2.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
+ggplot(kick.2018, aes(x = state, y = diff_date, color = state)) + geom_boxplot() + 
+    xlab("State") + ylab("Days") + scale_color_discrete(name = "Successful/Failure", 
+    breaks = c("failed", "successful"), labels = c("Failed", "Successful")) + 
+    ggtitle("Launched-Deadline") + theme(legend.position = "bottom") + coord_flip()
+```
+
+<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-3.png" width="60%" style="display: block; margin: auto;" />
+
+``` r
 t.test(kick.2018$diff_date ~ kick.2018$state)
 ```
 

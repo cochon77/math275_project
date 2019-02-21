@@ -2,7 +2,7 @@
 title: "Case Study Report"
 author: "Colin Pi, Sharan Ganjam Seshachallam"
 date: '2019 2 15 '
-output: pdf_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -45,6 +45,17 @@ ggplot(kick.2018, aes(x = diff_date, fill = state, color = state)) +
                        labels=c("Failed", "Successful"))+
   ggtitle("Launched-Deadline") +
   theme(legend.position="bottom")
+
+ggplot(kick.2018, aes(x = state, y = diff_date, color = state)) +
+  geom_boxplot() + 
+  xlab("State") +
+  ylab("Days") +
+  scale_color_discrete(name="Successful/Failure", 
+                       breaks=c("failed", "successful"), 
+                       labels=c("Failed", "Successful")) +
+  ggtitle("Launched-Deadline") +
+  theme(legend.position="bottom") +
+  coord_flip()
 
 t.test(kick.2018$diff_date ~ kick.2018$state)
 ```
