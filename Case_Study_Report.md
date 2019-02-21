@@ -28,7 +28,7 @@ Launched-Deadline and Success/Failure
 -------------------------------------
 
 ``` r
-kickstarter <- read_csv("Kickstarter_sample.csv")
+kickstarter <- read_csv("Kickstarter_sample.csv") ## pull in sample data
 
 ggplot(kickstarter) +
   geom_histogram(aes(x = diff_date), bins = 30) +
@@ -105,6 +105,38 @@ boot.t.CI <- mean.diff-quantile(Tstar, c(0.975,0.025))*se
 Formula t CI (95%): (2.07, 4.357)
 Bootstrap percentile CI (95%): (2.079, 4.339)
 Bootstrap t CI (95%): (2.06, 4.338)
+
+### Hypothesis Testing
+
+*H*<sub>0</sub> : *μ*<sub>*i**n**v**e**s**t**m**e**n**t* *w**i**n**d**o**w*,  *f**a**i**l**e**d*</sub> = *μ*<sub>*i**n**v**e**s**t**m**e**n**t* *w**i**n**d**o**w*,  *s**u**c**c**e**s**s**f**u**l*</sub>
+*H*<sub>*α*</sub> : *μ*<sub>*i**n**v**e**s**t**m**e**n**t* *w**i**n**d**o**w*,  *f**a**i**l**e**d*</sub> ≠ *μ*<sub>*i**n**v**e**s**t**m**e**n**t* *w**i**n**d**o**w*,  *s**u**c**c**e**s**s**f**u**l*</sub>
+
+``` r
+pooled.data <- unlist(kickstarter$diff_date)
+perm <- numeric(N)
+
+for (i in 1:N){
+  index <- sample(length(pooled.data), size = length(failed), replace = FALSE)
+  perm[i] <- mean(pooled.data[index])-mean(pooled.data[-index])
+}
+
+ggplot(data.frame(perm), aes(x = perm)) +
+  geom_histogram(bins = 30) +
+  xlab("xbar(Failed)-xbar(Successful)") +
+  ylab("") +
+  geom_vline(xintercept=mean.diff, color = "red", linetype = "longdash") +
+  ggtitle("Permutation distribution for difference in means")
+```
+
+<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-4-1.png" width="60%" style="display: block; margin: auto;" />
+
+``` r
+p.perm <- (sum(perm >= mean.diff)+1)/(N+1)*2
+p.t <- t.test(diff_date~state, data = kickstarter)$p.value
+```
+
+p-value (perm): 1.999810^{-4}
+p-value (t): 4.012104710^{-8}
 
 ### Success Rate before and after 2017
 

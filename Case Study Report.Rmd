@@ -97,11 +97,40 @@ boot.perc.CI <- quantile(boot.perc, c(0.025,0.975))
 boot.t.CI <- mean.diff-quantile(Tstar, c(0.975,0.025))*se
 ```
 
-Formula t CI (95%): (`r round(formula.t.CI[1], digits = 3)`, `r round(formula.t.CI[2], digits = 3)`)
-\
-Bootstrap percentile CI (95%): (`r round(boot.perc.CI[1], digits = 3)`, `r round(boot.perc.CI[2], digits = 3)`)
-\
+Formula t CI (95%): (`r round(formula.t.CI[1], digits = 3)`, `r round(formula.t.CI[2], digits = 3)`)\
+Bootstrap percentile CI (95%): (`r round(boot.perc.CI[1], digits = 3)`, `r round(boot.perc.CI[2], digits = 3)`)\
 Bootstrap t CI (95%): (`r round(boot.t.CI[1], digits = 3)`, `r round(boot.t.CI[2], digits = 3)`)
+
+### Hypothesis Testing
+
+$$
+\textit{H}_{0}: {\mu}_{investment \ window, \ failed} = {\mu}_{investment \ window, \ successful}
+$$
+$$
+\textit{H}_{\alpha}: {\mu}_{investment \ window, \ failed} \neq {\mu}_{investment \ window, \ successful}
+$$
+
+```{r, fig.align='center'}
+pooled.data <- unlist(kickstarter$diff_date)
+perm <- numeric(N)
+
+for (i in 1:N){
+  index <- sample(length(pooled.data), size = length(failed), replace = FALSE)
+  perm[i] <- mean(pooled.data[index])-mean(pooled.data[-index])
+}
+
+ggplot(data.frame(perm), aes(x = perm)) +
+  geom_histogram(bins = 30) +
+  xlab("xbar(Failed)-xbar(Successful)") +
+  ylab("") +
+  geom_vline(xintercept=mean.diff, color = "red", linetype = "longdash") +
+  ggtitle("Permutation distribution for difference in means")
+
+p.perm <- (sum(perm >= mean.diff)+1)/(N+1)*2
+p.t <- t.test(diff_date~state, data = kickstarter)$p.value
+```
+p-value (perm): $1.9998\cdot10^{-4}$\
+p-value (t): $4.0121047\cdot10^{-8}$
 
 ###Success Rate before and after 2017
 
