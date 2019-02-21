@@ -2,7 +2,7 @@
 title: "Case Study Report"
 author: "Colin Pi, Sharan Ganjam Seshachallam"
 date: '2019 2 15 '
-output: github_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -34,7 +34,7 @@ kick.2018 <- kick.2018 %>% filter(state %in% c("failed","successful")) %>% mutat
 ## Launched-Deadline and Success/Failure
 
 ```{r, fig.align='center', message=FALSE}
-kickstarter <- read_csv("Kickstarter_sample.csv")
+kickstarter <- read_csv("Kickstarter_sample.csv") ## pull in sample data
 
 ggplot(kickstarter) +
   geom_histogram(aes(x = diff_date), bins = 30) +
