@@ -3,68 +3,108 @@ Case Study Report
 Colin Pi, Sharan Ganjam Seshachallam
 2019 2 15
 
+Data Wrangling
+--------------
+
 ``` r
+# Import the Dataset
 kick.2018 <- read_csv("ks-projects-201801.csv")
+
+# Sort out failed and successful projects
+kick.2018 <- kick.2018 %>% filter(state %in% c("failed", "successful")) %>% 
+    mutate(diff_date = as.numeric(as.Date(deadline) - as.Date(str_extract(launched, 
+        "^.{10}"))))
+
+# Random Sampling of the Data
+
+## index <- sample(nrow(kick.2018), 2000, replace=FALSE)
+
+## kick.sample <- kick.2018[index, ]
+
+## write.csv(kick.sample, file = 'Kickstarter_sample.csv', row.names = FALSE)
 ```
 
 Launched-Deadline and Success/Failure
 -------------------------------------
 
 ``` r
-kick.2018 <- kick.2018 %>% filter(state %in% c("failed", "successful")) %>% 
-    mutate(diff_date = as.numeric(as.Date(deadline) - as.Date(str_extract(launched, 
-        "^.{10}"))))
+kickstarter <- read_csv("Kickstarter_sample.csv")
 
-ggplot(kick.2018) + geom_histogram(aes(x = diff_date), bins = 30) + xlab("Days") + 
-    ylab("") + ggtitle("Launched-Deadline")
+ggplot(kickstarter) +
+  geom_histogram(aes(x = diff_date), bins = 30) +
+  xlab("Days") +
+  ylab("") +
+  ggtitle("Launched-Deadline")
 ```
 
 <img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-1.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
-kick.2018$state <- factor(kick.2018$state)
+kickstarter$state <- factor(kickstarter$state)
 
-failed <- subset(kick.2018, select = diff_date, subset = state == "failed", 
-    drop = T)
-successful <- subset(kick.2018, select = diff_date, subset = state == "successful", 
-    drop = T)
+failed <- subset(kickstarter, select = diff_date, subset = state == "failed", drop = T)
+successful <- subset(kickstarter, select = diff_date, subset = state == "successful", drop = T)
 
-ggplot(kick.2018, aes(x = diff_date, fill = state, color = state)) + geom_histogram(alpha = 0.2, 
-    position = "identity", bins = 30) + xlab("Days") + ylab("") + scale_fill_discrete(name = "Successful/Failure", 
-    breaks = c("failed", "successful"), labels = c("Failed", "Successful")) + 
-    scale_color_discrete(name = "Successful/Failure", breaks = c("failed", "successful"), 
-        labels = c("Failed", "Successful")) + ggtitle("Launched-Deadline") + 
-    theme(legend.position = "bottom")
+ggplot(kickstarter, aes(x = diff_date, fill = state, color = state)) +
+  geom_histogram(alpha=0.2, position="identity", bins = 30) +
+  xlab("Days") +
+  ylab("") +
+  scale_fill_discrete(name="Successful/Failure", 
+                      breaks=c("failed", "successful"), 
+                      labels=c("Failed", "Successful")) + 
+  scale_color_discrete(name="Successful/Failure", 
+                       breaks=c("failed", "successful"), 
+                       labels=c("Failed", "Successful"))+
+  ggtitle("Launched-Deadline") +
+  theme(legend.position="bottom")
 ```
 
 <img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-2.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
-ggplot(kick.2018, aes(x = state, y = diff_date, color = state)) + geom_boxplot() + 
-    xlab("State") + ylab("Days") + scale_color_discrete(name = "Successful/Failure", 
-    breaks = c("failed", "successful"), labels = c("Failed", "Successful")) + 
-    ggtitle("Launched-Deadline") + theme(legend.position = "bottom") + coord_flip()
+ggplot(kickstarter, aes(x = state, y = diff_date, color = state)) +
+  geom_boxplot() + 
+  xlab("State") +
+  ylab("Days") +
+  scale_color_discrete(name="Successful/Failure", 
+                       breaks=c("failed", "successful"), 
+                       labels=c("Failed", "Successful")) +
+  ggtitle("Launched-Deadline") +
+  theme(legend.position="bottom") +
+  coord_flip()
 ```
 
 <img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-3.png" width="60%" style="display: block; margin: auto;" />
 
+Confidence Interval
+-------------------
+
 ``` r
-t.test(kick.2018$diff_date ~ kick.2018$state)
+N <- 10^4
+
+mean.diff <- mean(failed)-mean(successful)
+se <- sqrt(var(failed)/length(failed)+var(successful)/length(successful))
+
+boot.perc <- numeric(N)
+Tstar <- numeric(N)
+
+for (i in 1:N){
+  failedBoot <- sample(failed, length(failed), replace=TRUE)
+  successfulBoot <- sample(successful, length(successful), replace = TRUE)
+  SEstar <- sqrt(var(failedBoot)/length(failedBoot)+var(successfulBoot)/length(successfulBoot))
+  meanDiffBoot <- mean(failedBoot)-mean(successfulBoot)
+  Tstar[i] <- (meanDiffBoot-mean.diff)/SEstar
+  boot.perc[i] <- meanDiffBoot
+}
+
+formula.t.CI <- t.test(diff_date~state, data = kickstarter)$conf
+boot.perc.CI <- quantile(boot.perc, c(0.025,0.975))
+boot.t.CI <- mean.diff-quantile(Tstar, c(0.975,0.025))*se
 ```
 
-    ## 
-    ##  Welch Two Sample t-test
-    ## 
-    ## data:  kick.2018$diff_date by kick.2018$state
-    ## t = 68.989, df = 307680, p-value < 2.2e-16
-    ## alternative hypothesis: true difference in means is not equal to 0
-    ## 95 percent confidence interval:
-    ##  2.931166 3.102584
-    ## sample estimates:
-    ##     mean in group failed mean in group successful 
-    ##                 35.17332                 32.15645
-
-We are 95% confident that in average the days from launched date to deadline of the failed projects is from 2.93 to 3.10 days longer than that of the successful projects.
+Formula t CI (95%): (2.07, 4.357)
+Bootstrap percentile CI (95%): (2.079, 4.339)
+Bootstrap t CI (95%): (2.06, 4.338)
 
 ### Success Rate before and after 2017
 
