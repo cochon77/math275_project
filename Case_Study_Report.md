@@ -42,9 +42,17 @@ ggplot(kickstarter) +
 ``` r
 kickstarter$state <- factor(kickstarter$state)
 
-failed <- subset(kickstarter, select = diff_date, subset = state == "failed", drop = T)
-successful <- subset(kickstarter, select = diff_date, subset = state == "successful", drop = T)
+ggplot(kickstarter, aes(sample = diff_date)) +
+  stat_qq() + 
+  stat_qq_line() +
+  xlab("Theoretical") +
+  ylab("Sample") +
+  ggtitle("Q-Q Plot for the duration of investment window (days)")
+```
 
+<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-2.png" width="60%" style="display: block; margin: auto;" />
+
+``` r
 ggplot(kickstarter, aes(x = diff_date, fill = state, color = state)) +
   geom_histogram(alpha=0.2, position="identity", bins = 30) +
   xlab("Days") +
@@ -59,7 +67,7 @@ ggplot(kickstarter, aes(x = diff_date, fill = state, color = state)) +
   theme(legend.position="bottom")
 ```
 
-<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-2.png" width="60%" style="display: block; margin: auto;" />
+<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-3.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
 ggplot(kickstarter, aes(x = state, y = diff_date, color = state)) +
@@ -74,12 +82,27 @@ ggplot(kickstarter, aes(x = state, y = diff_date, color = state)) +
   coord_flip()
 ```
 
-<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-3.png" width="60%" style="display: block; margin: auto;" />
+<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-4.png" width="60%" style="display: block; margin: auto;" />
+
+``` r
+ggplot(kickstarter, aes(sample = diff_date)) +
+  stat_qq() + 
+  stat_qq_line() +
+  xlab("Theoretical") +
+  ylab("Sample") +
+  ggtitle("Q-Q Plot for the duration of investment window (days)") +
+  facet_wrap(~state)
+```
+
+<img src="Case_Study_Report_files/figure-markdown_github/unnamed-chunk-2-5.png" width="60%" style="display: block; margin: auto;" />
 
 Confidence Interval
 -------------------
 
 ``` r
+failed <- subset(kickstarter, select = diff_date, subset = state == "failed", drop = T)
+successful <- subset(kickstarter, select = diff_date, subset = state == "successful", drop = T)
+
 N <- 10^4
 
 mean.diff <- mean(failed)-mean(successful)
@@ -135,38 +158,5 @@ p.perm <- (sum(perm >= mean.diff)+1)/(N+1)*2
 p.t <- t.test(diff_date~state, data = kickstarter)$p.value
 ```
 
-p-value (perm): 1.999810^{-4}
-p-value (t): 4.012104710^{-8}
-
-### Success Rate before and after 2017
-
-``` r
-kick.2018 <- kick.2018 %>% mutate(before_2017 = ifelse(launched < "2017-01-01", 
-    "Yes", "No"))
-
-before.2017 <- subset(kick.2018, select = state, subset = before_2017 == "Yes", 
-    drop = T)
-after.2017 <- subset(kick.2018, select = state, subset = before_2017 == "No", 
-    drop = T)
-
-succ.before.2017 <- sum(before.2017 == "successful")
-succ.after.2017 <- sum(after.2017 == "successful")
-
-prop.test(c(succ.before.2017, succ.after.2017), c(length(before.2017), length(after.2017)), 
-    correct = FALSE)
-```
-
-    ## 
-    ##  2-sample test for equality of proportions without continuity
-    ##  correction
-    ## 
-    ## data:  c(succ.before.2017, succ.after.2017) out of c(length(before.2017), length(after.2017))
-    ## X-squared = 93.689, df = 1, p-value < 2.2e-16
-    ## alternative hypothesis: two.sided
-    ## 95 percent confidence interval:
-    ##  -0.02943464 -0.01946908
-    ## sample estimates:
-    ##    prop 1    prop 2 
-    ## 0.4006772 0.4251290
-
-We are 95% confident that in average the proportion of successful projects after 2017 is 2 to 3% higher than before 2017.
+p-value (perm): 1.9998 ⋅ 10<sup>−4</sup>
+p-value (t): 4.0121047 ⋅ 10<sup>−8</sup>
