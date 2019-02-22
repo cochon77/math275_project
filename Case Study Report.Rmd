@@ -44,8 +44,12 @@ ggplot(kickstarter) +
 
 kickstarter$state <- factor(kickstarter$state)
 
-failed <- subset(kickstarter, select = diff_date, subset = state == "failed", drop = T)
-successful <- subset(kickstarter, select = diff_date, subset = state == "successful", drop = T)
+ggplot(kickstarter, aes(sample = diff_date)) +
+  stat_qq() + 
+  stat_qq_line() +
+  xlab("Theoretical") +
+  ylab("Sample") +
+  ggtitle("Q-Q Plot for the duration of investment window (days)")
 
 ggplot(kickstarter, aes(x = diff_date, fill = state, color = state)) +
   geom_histogram(alpha=0.2, position="identity", bins = 30) +
@@ -70,11 +74,22 @@ ggplot(kickstarter, aes(x = state, y = diff_date, color = state)) +
   ggtitle("Launched-Deadline") +
   theme(legend.position="bottom") +
   coord_flip()
+
+ggplot(kickstarter, aes(sample = diff_date)) +
+  stat_qq() + 
+  stat_qq_line() +
+  xlab("Theoretical") +
+  ylab("Sample") +
+  ggtitle("Q-Q Plot for the duration of investment window (days)") +
+  facet_wrap(~state)
 ```
 
 ## Confidence Interval
 
 ```{r}
+failed <- subset(kickstarter, select = diff_date, subset = state == "failed", drop = T)
+successful <- subset(kickstarter, select = diff_date, subset = state == "successful", drop = T)
+
 N <- 10^4
 
 mean.diff <- mean(failed)-mean(successful)
@@ -129,21 +144,6 @@ ggplot(data.frame(perm), aes(x = perm)) +
 p.perm <- (sum(perm >= mean.diff)+1)/(N+1)*2
 p.t <- t.test(diff_date~state, data = kickstarter)$p.value
 ```
+
 p-value (perm): $1.9998\cdot10^{-4}$\
 p-value (t): $4.0121047\cdot10^{-8}$
-
-###Success Rate before and after 2017
-
-```{r, tidy=TRUE}
-kick.2018 <- kick.2018 %>% mutate(before_2017 = ifelse(launched < "2017-01-01", "Yes","No"))
-
-before.2017 <- subset(kick.2018, select = state, subset = before_2017 == "Yes", drop = T)
-after.2017 <- subset(kick.2018, select = state, subset = before_2017 == "No", drop = T)
-
-succ.before.2017 <- sum(before.2017 == "successful")
-succ.after.2017 <- sum(after.2017 == "successful")
-
-prop.test(c(succ.before.2017,succ.after.2017), c(length(before.2017), length(after.2017)), correct = FALSE)
-```
-
-We are 95% confident that in average the proportion of successful projects after 2017 is 2 to 3% higher than before 2017. 
