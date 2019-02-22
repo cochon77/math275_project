@@ -31,11 +31,22 @@ kick.2018 <- kick.2018 %>% filter(state %in% c("failed","successful")) %>% mutat
 ##write.csv(kick.sample, file = "Kickstarter_sample.csv", row.names = FALSE)
 ```
 
-## Launched-Deadline and Success/Failure
+## Launched-Deadline and Success/Failure Summary Statistic
 
-```{r, fig.align='center', message=FALSE}
+```{r, tidy=TRUE, results = 'asis', message=FALSE}
 kickstarter <- read_csv("Kickstarter_sample.csv") ## pull in sample data
 
+failed <- subset(kickstarter, select = diff_date, subset = state == "failed", drop = T) ## subset failed projects
+successful <- subset(kickstarter, select = diff_date, subset = state == "successful", drop = T) ## subset successful projects
+
+stargazer::stargazer(data.frame(kickstarter$diff_date), header = FALSE, title="Summary statistics of the duration of investment window (pooled data, days)")
+stargazer::stargazer(data.frame(failed), header = FALSE, title="Summary statistics of the duration of investment window (failed, days)")
+stargazer::stargazer(data.frame(successful), header = FALSE, title="Summary statistics of the duration of investment window (successful, days)")
+```
+
+## Data Visualization
+
+```{r, fig.align='center'}
 ggplot(kickstarter) +
   geom_histogram(aes(x = diff_date), bins = 30) +
   xlab("Days") +
@@ -87,9 +98,6 @@ ggplot(kickstarter, aes(sample = diff_date)) +
 ## Confidence Interval
 
 ```{r}
-failed <- subset(kickstarter, select = diff_date, subset = state == "failed", drop = T)
-successful <- subset(kickstarter, select = diff_date, subset = state == "successful", drop = T)
-
 N <- 10^4
 
 mean.diff <- mean(failed)-mean(successful)
