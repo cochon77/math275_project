@@ -5,3 +5,4 @@ readr
 ggplot2
 bindrcpp
 gridExtra
+stargazer
