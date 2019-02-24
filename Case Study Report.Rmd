@@ -1,7 +1,7 @@
 ---
-title: "Case Study Report"
+title: "Case Study Appendix"
 author: "Colin Pi, Sharan Ganjam Seshachallam"
-date: '2019 2 15 '
+date: '2019 2 25 '
 output: pdf_document
 ---
 
@@ -12,6 +12,7 @@ library(dplyr)
 library(readr)
 library(ggplot2)
 library(gridExtra)
+library(stargazer)
 ```
 
 ## Data Wrangling
@@ -22,6 +23,8 @@ kick.2018 <- read_csv("ks-projects-201801.csv")
 
 # Sort out failed and successful projects
 kick.2018 <- kick.2018 %>% filter(state %in% c("failed","successful")) %>% mutate(diff_date = as.numeric(as.Date(deadline)-as.Date(str_extract(launched, "^.{10}"))))
+
+kick.2018$state <- factor(kick.2018$state)
 
 # Random Sampling of the Data
 
@@ -42,14 +45,17 @@ kickstarter <- read_csv("Kickstarter_sample.csv") ## pull in sample data
 failed <- subset(kickstarter, select = diff_date, subset = state == "failed", drop = T) ## subset failed projects
 successful <- subset(kickstarter, select = diff_date, subset = state == "successful", drop = T) ## subset successful projects
 
-stargazer::stargazer(data.frame(kickstarter$diff_date), header = FALSE, title="Summary statistics of the duration of investment window (pooled data, days)")
-stargazer::stargazer(data.frame(failed), header = FALSE, title="Summary statistics of the duration of investment window (failed, days)")
-stargazer::stargazer(data.frame(successful), header = FALSE, title="Summary statistics of the duration of investment window (successful, days)")
+stargazer(data.frame(kickstarter$diff_date), header = FALSE, 
+          title="Summary statistics of the duration of investment window (pooled data, days)")
+stargazer(data.frame(failed), header = FALSE, 
+          title="Summary statistics of the duration of investment window (failed, days)")
+stargazer(data.frame(successful), header = FALSE, 
+          title="Summary statistics of the duration of investment window (successful, days)")
 ```
 
 ### Data Visualization
 
-```{r, fig.align='center'}
+```{r, tidy=TRUE, fig.align='center'}
 pooled.hist <- ggplot(kickstarter) +
   geom_histogram(aes(x = diff_date), bins = 30) +
   xlab("Days") +
@@ -103,12 +109,44 @@ ggplot(kickstarter, aes(sample = diff_date)) +
   theme(strip.text.x = element_text(size=13))
 ```
 
-## Confidence Interval
+### Hypothesis Testing
 
-```{r}
-N <- 10^4
+$$
+\textit{H}_{0}: {\mu}_{investment \ window, \ failed} = {\mu}_{investment \ window, \ successful}
+$$
+$$
+\textit{H}_{\alpha}: {\mu}_{investment \ window, \ failed} \neq {\mu}_{investment \ window, \ successful}
+$$
 
+```{r, fig.align='center'}
 mean.diff <- mean(failed)-mean(successful)
+N <- 10^4
+pooled.data <- unlist(kickstarter$diff_date)
+perm <- numeric(N)
+
+for (i in 1:N){
+  index <- sample(length(pooled.data), size = length(failed), replace = FALSE)
+  perm[i] <- mean(pooled.data[index])-mean(pooled.data[-index])
+}
+
+ggplot(data.frame(perm), aes(x = perm)) +
+  geom_histogram(bins = 30) +
+  xlab("xbar(Failed)-xbar(Successful)") +
+  ylab("") +
+  geom_vline(xintercept=mean.diff, color = "red", linetype = "longdash") +
+  ggtitle("Permutation distribution for difference in means")
+
+p.perm <- (sum(perm >= mean.diff)+1)/(N+1)*2
+t.test(diff_date~state, data = kickstarter)
+```
+
+p-value (perm): $1.9998\cdot10^{-4}$\
+p-value (t): $4.0121047\cdot10^{-8}$
+
+
+### Confidence Interval
+
+```{r, tidy=TRUE}
 se <- sqrt(var(failed)/length(failed)+var(successful)/length(successful))
 
 boot.perc <- numeric(N)
@@ -132,34 +170,12 @@ Formula t CI (95%): (`r round(formula.t.CI[1], digits = 3)`, `r round(formula.t.
 Bootstrap percentile CI (95%): (`r round(boot.perc.CI[1], digits = 3)`, `r round(boot.perc.CI[2], digits = 3)`)\
 Bootstrap t CI (95%): (`r round(boot.t.CI[1], digits = 3)`, `r round(boot.t.CI[2], digits = 3)`)
 
-### Hypothesis Testing
+### Hypothsis testing on the population
 
-$$
-\textit{H}_{0}: {\mu}_{investment \ window, \ failed} = {\mu}_{investment \ window, \ successful}
-$$
-$$
-\textit{H}_{\alpha}: {\mu}_{investment \ window, \ failed} \neq {\mu}_{investment \ window, \ successful}
-$$
-
-```{r, fig.align='center'}
-pooled.data <- unlist(kickstarter$diff_date)
-perm <- numeric(N)
-
-for (i in 1:N){
-  index <- sample(length(pooled.data), size = length(failed), replace = FALSE)
-  perm[i] <- mean(pooled.data[index])-mean(pooled.data[-index])
-}
-
-ggplot(data.frame(perm), aes(x = perm)) +
-  geom_histogram(bins = 30) +
-  xlab("xbar(Failed)-xbar(Successful)") +
-  ylab("") +
-  geom_vline(xintercept=mean.diff, color = "red", linetype = "longdash") +
-  ggtitle("Permutation distribution for difference in means")
-
-p.perm <- (sum(perm >= mean.diff)+1)/(N+1)*2
-p.t <- t.test(diff_date~state, data = kickstarter)$p.value
+```{r}
+t.test(diff_date~state, data = kick.2018)
 ```
 
-p-value (perm): $1.9998\cdot10^{-4}$\
-p-value (t): $4.0121047\cdot10^{-8}$
+Two-sided hypothesis t-test p-value: $< 2.2\cdot 10^{-16}$
+\
+Formula t CI (95%): (2.931166, 3.102584)
